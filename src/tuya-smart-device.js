@@ -36,6 +36,9 @@ module.exports = function (RED) {
                 case "GET":
                     tuyaDevice.get(msg.payload);
                     break;
+                case "REFRESH":
+                    tuyaDevice.refresh(msg.payload);
+                    break;
             }
         });
         let setStatusConnecting = function () { return node.status({ fill: "yellow", shape: "ring", text: "connecting" }); };
@@ -50,6 +53,7 @@ module.exports = function (RED) {
             key: node.deviceKey,
             ip: node.deviceIp,
             issueGetOnConnect: false,
+            issueRefreshOnConnect: true,
             nullPayloadOnJSONError: false,
             version: node.tuyaVersion
         };
@@ -104,6 +108,18 @@ module.exports = function (RED) {
         });
 
         tuyaDevice.on('data', data => {
+            node.log(`Data from device: ${JSON.stringify(data)}`);
+            setStatusConnected();
+            node.send({
+                payload: {
+                    data: data,
+                    deviceId: node.deviceId,
+                    deviceName: node.deviceName
+                }
+            });
+        });
+        
+        tuyaDevice.on('dp-refresh', data => {
             node.log(`Data from device: ${JSON.stringify(data)}`);
             setStatusConnected();
             node.send({
